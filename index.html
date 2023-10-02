@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Canvas magic</title>
+    <meta charset="utf-8">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            border: 1px solid #000000;
+        }
+
+        body {
+            font-size: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0
+        }
+
+        .wrapper {
+            place-items: center;
+            display: flex;
+            padding: 1em;
+        }
+
+        button {
+            margin: 0 1em;
+        }
+
+        .counter {
+            display: flex;
+            place-items: center;
+            place-content: flex-end;
+            text-align: right;
+        }
+
+        .counter button {
+            cursor: pointer;
+            border: 1px solid currentColor;
+            background: #eee;
+            font-family: monospace;
+            min-width: 2em;
+            font-weight: 700;
+            height: 2em;
+            font-size: inherit;
+            color: #777;
+            transition: .1s color;
+        }
+
+        .counter button:active {
+            color: #000;
+            background: #fff;
+            border-color: currentColor
+        }
+
+        .counter.saved input {
+            color: #999;
+        }
+
+        .counter .max~input,
+        .counter .max {
+            background: #fee;
+        }
+
+        .counter button:first-of-type {
+            border-radius: 3px 0 0 3px;
+            margin: 0 0 0 1em;
+        }
+
+        .counter button:last-of-type {
+            border-radius: 0 3px 3px 0;
+            margin: 0 1em 0 0;
+            order: 1;
+        }
+
+        .counter input {
+            appearance: textfield;
+            text-align: center;
+            border-radius: 0;
+            border: 1px solid #aaa;
+            border-left: 0;
+            border-right: 0;
+            width: 4em;
+            width: 4ch;
+            height: 2em;
+            font-size: inherit;
+            background: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="counter">
+            <label for="number">Objects number</label>
+            <button>—</button><button>+</button>
+            <input id="number" type="number" value="777" min="1" max="1000">
+        </div>
+        <div class="counter">
+            <label for="size">Size</label>
+            <button>—</button><button>+</button>
+            <input id="size" type="number" value="777" min="10" max="10000">
+        </div>
+        <div class="counter">
+            <label for="random">Random position</label>
+            <button>—</button><button>+</button>
+            <input id="random" type="number" value="7777" min="1" max="770000">
+        </div>
+        <div class="counter">
+            <label for="transparency">Transparency</label>
+            <button>—</button><button>+</button>
+            <input id="transparency" type="number" value="7" min="0" max="9">
+        </div>
+        <button id="clear">Clear</button>
+        <button id="magic">Load magic</button>
+    </div>
+    <canvas id="myCanvas" width="4096" height="2160" title="Right mouse click to 'Save Image As...'">
+
+    </canvas>
+    <script>
+        (function () {
+            "use strict";
+            const number = document.getElementById('number')
+            const positions = document.getElementById('random')
+            const size = document.getElementById('size')
+            const clear = document.getElementById('clear')
+            const transparency = document.getElementById('transparency')
+
+            var c = document.getElementById("myCanvas");
+            const ctx = c.getContext("2d");
+            const random = () => Math.floor(Math.random() * positions.value || 1) + 1
+            const randomColor = () => "#000000".replace(/0/g, ()=>(~~(Math.random() * 16)).toString(16))
+
+
+            function MakeObjects(position1, position2, size, color,transparency) {
+                this.position1 = position1
+                this.position2 = position2
+                this.size = size
+                this.color = color
+                this.transparency = transparency
+                ctx.fillStyle = this.color + (this.transparency !== '0'?0+this.transparency:'')
+                ctx.beginPath();
+                ctx.arc(this.position2, this.position1, this.size, 0, this.size * Math.PI);
+                ctx.closePath();
+                ctx.strokeStyle = this.color + (this.transparency !== '0'?this.transparency+0:'')
+                ctx.fill()
+                ctx.stroke()
+                console.log('lids')
+            }
+
+            function magicLoad() {
+                for (let i = 0; i < number.value; i++) {
+                    new MakeObjects(random(), random(), size.value, randomColor(),transparency.value)
+                }
+            }
+
+            function clearCanvas() {
+                ctx.clearRect(0, 0, c.width, c.height);
+            }
+
+            const magicButton = document.getElementById('magic')
+            magicButton.addEventListener('click', magicLoad)
+            clear.addEventListener('click', clearCanvas)
+
+            magicLoad()
+            const counters = document.querySelectorAll('.counter')
+            const getElem = e => e.getElementsByTagName('input')[0]
+            const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+            const counter = {
+                min: 1,
+                max: 100,
+                number: 0,
+                numberMinus1: function () {
+                    return this.number - 1
+                },
+                numberPlus1: function () {
+                    return this.number + 1
+                },
+                set setNumber(number) {
+                    if (number > Math.abs(this.max || number < this.min)) return
+                    this.number = number
+                },
+                get getNumber() {
+                    return this.number
+                }
+            }
+
+            const saveAllInputs = () => {
+                const array = []
+                const length = counters.length
+
+                for (let i = 0; i < length; i++) {
+                    array.push(counters[i].getElementsByTagName('input')[0].value)
+                }
+                localStorage.setItem('CInputValues', array.join(','))
+                // console.log('saved')
+            }
+
+
+            let bo = false
+            async function setItems(e) {
+                if (bo) return
+                bo = true
+                e.classList.add('saved')
+                await delay(1600)
+                await saveAllInputs()
+                e.classList.remove('saved')
+                bo = false
+            }
+
+            const hightLight = async e => {
+                e.classList.add('max')
+                await delay(200)
+                e.classList.remove('max')
+            }
+            const increase = e => {
+                const {
+                    target
+                } = e
+                // target not button return and forget
+                if (target.tagName !== 'BUTTON') return
+                // get currentTarget for later work (we could use parentElement, but maybe this is faster ..hope..)
+                const {
+                    currentTarget
+                } = e
+
+                // change mdash from minus to make look maybe better for buttons
+                if (target.textContent === '—') {
+                    counter.setNumber = parseInt(getElem(currentTarget).value)
+                    if ((getElem(currentTarget).min || counter.min) < counter.getNumber) {
+                        counter.setNumber = getElem(currentTarget).value = counter.numberMinus1()
+                    } else return hightLight(target)
+                }
+
+                if (target.textContent === '+') {
+                    counter.setNumber = parseInt(getElem(currentTarget).value)
+                    if (parseInt(getElem(currentTarget).max || counter.max) > counter.getNumber) {
+                        counter.setNumber = getElem(currentTarget).value = counter.numberPlus1()
+                    } else return hightLight(target)
+                }
+                setItems(target.parentElement)
+            }
+
+            const inputChange = e => {
+                const {
+                    target
+                } = e
+                //if input value is more or less than counter min
+                if (isNaN(parseInt(target.value)) || (Math.max(parseInt(target.min)) || counter
+                        .min) > parseInt(target.value)) target.value = target.min || counter.min
+                else if ((Math.max(parseInt(target.max)) || counter.max) < parseInt(target
+                        .value)) target.value = target.max || counter.max
+                setItems(target.parentElement)
+            }
+
+            const values = localStorage.getItem('CInputValues') && localStorage.getItem('CInputValues').split(',')
+                .map(Number)
+
+            const length = counters.length
+            for (let i = 0; i < length; i++) {
+                const inputs = counters[i].getElementsByTagName('input')[0]
+                inputs.value = values&&values[i] ? values[i] : inputs.value || inputs.min || counter.min
+                counters[i].addEventListener('click', increase)
+                inputs.addEventListener('change', inputChange)
+            }
+
+
+
+        })()
+    </script>
+</body>
+
+</html>
